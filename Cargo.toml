@@ -1,0 +1,23 @@
+[package]
+name = "strim"
+version = "0.1.0"
+edition = "2021"
+authors = ["Peter Varo <hello@petervaro.com>"]
+license = "GPL-3.0-or-later"
+repository = "https://codeberg.org/petervaro/strim"
+description = "Macro to trim whitespace from string literals"
+categories = [
+    "development-tools",
+]
+keywords = [
+    "macro",
+    "compile-time",
+    "text-processing",
+]
+exclude = ["/tests/"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+litrs = "~0.4.1"

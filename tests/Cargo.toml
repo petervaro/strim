@@ -1,0 +1,13 @@
+[package]
+name = "tests"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+path = "tests.rs"
+
+[dependencies]
+strim = { path = "../" }
+
+[features]
+compile-errors = []
