@@ -1,9 +1,11 @@
 # `strim`
 
+[![status-badge](https://ci.codeberg.org/api/badges/13539/status.svg)][badge]
+
 This crate provides a single procedural macro that removes all blank lines and
 leading and trailing whitespace from a string literal.
 
-## Rational
+## Rationale
 
 Rust's string literals are very convenient to use when it comes to breaking them
 into multiple lines by utilising the `\` character, e.g.
@@ -30,11 +32,24 @@ let string = trim!(r#"
 assert_eq!(string, "\"Hello,World!\"");
 ```
 
+## Installation
+
+```toml
+[dependencies]
+strim = "~0.1.0"
+```
+
+Or use:
+
+```bash
+$ cargo add strim
+```
+
 ## Bug Reports and Feature Requests
 
 If you find something that doesn't work as expected and you wish to report it,
 or if you would like to submit a feature request, please do both of these in the
-'issues' section of the [original repository on Codeberg][cb].
+'issues' section of the [original repository on Codeberg][repo].
 
 ## Development and Contribution
 
@@ -74,4 +89,5 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses>.
 
 <!-- LINKS -->
-[cb]: https://codeberg.org/petervaro/strim
+[badge]: https://ci.codeberg.org/repos/13539
+[repo]: https://codeberg.org/petervaro/strim
