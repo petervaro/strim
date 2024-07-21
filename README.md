@@ -3,12 +3,12 @@
 [![status-badge](https://ci.codeberg.org/api/badges/13539/status.svg)][badge]
 
 This crate provides a single procedural macro that removes all blank lines and
-leading and trailing whitespace from a string literal.
+leading and trailing whitespace from a string or byte-string literal.
 
 ## Rationale
 
-Rust's string literals are very convenient to use when it comes to breaking them
-into multiple lines by utilising the `\` character, e.g.
+Rust's string (and byte-string) literals are very convenient to use when it
+comes to breaking them into multiple lines by utilising the `\` character, e.g.
 
 ```rust
 let string = "\
@@ -36,13 +36,13 @@ assert_eq!(string, "\"Hello,World!\"");
 
 ```toml
 [dependencies]
-strim = "~0.1.0"
+strim = "~0.2.0"
 ```
 
 Or use:
 
 ```bash
-$ cargo add strim
+$ cargo add strim@~0.2.0
 ```
 
 ## Bug Reports and Feature Requests
