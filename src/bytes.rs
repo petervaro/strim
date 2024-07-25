@@ -1,11 +1,7 @@
 use std::{slice::Iter, iter::Enumerate};
 
 const NULL: u8 = b'\0';
-const SPACE: u8 = b' ';
-const HORIZONTAL_TAB: u8 = b'\t';
 const LINE_FEED: u8 = b'\n';
-const VERTICAL_TAB: u8 = b'\x0B';
-const FORM_FEED: u8 = b'\x0C';
 const CARRIAGE_RETURN: u8 = b'\r';
 
 struct Lines<'a> {
@@ -64,48 +60,13 @@ impl<'a> Iterator for Lines<'a> {
     }
 }
 
-fn is_whitespace(byte: u8) -> bool {
-    match byte {
-        SPACE |
-        HORIZONTAL_TAB |
-        LINE_FEED |
-        VERTICAL_TAB |
-        FORM_FEED |
-        CARRIAGE_RETURN => true,
-        _ => false,
-    }
-}
-
 pub trait Bytes {
     fn lines(&self) -> impl Iterator<Item = &[u8]>;
-
-    fn trim(&self) -> &[u8];
 }
 
 impl Bytes for [u8] {
     fn lines(&self) -> impl Iterator<Item = &[u8]> {
         Lines::new(self)
-    }
-
-    fn trim(&self) -> &[u8] {
-        let mut start = 0;
-        for (i, &byte) in self.iter().enumerate() {
-            if !is_whitespace(byte) {
-                start = i;
-                break;
-            }
-        };
-
-        let mut end = self.len();
-        for &byte in self.iter().rev() {
-            if !is_whitespace(byte) {
-                break;
-            }
-
-            end -= 1;
-        }
-
-        &self[start..end]
     }
 }
 
@@ -160,75 +121,5 @@ mod tests {
         assert_eq!(lines.next(), Some(b"epsilon".as_slice()));
         assert_eq!(lines.next(), Some(b"zeta".as_slice()));
         assert_eq!(lines.next(), None);
-    }
-
-    #[test]
-    fn trim_empty() {
-        let bytes = b"";
-        assert_eq!(bytes.trim(), bytes.as_slice());
-    }
-
-    #[test]
-    fn trim_nothing() {
-        let bytes = b"hello";
-        assert_eq!(bytes.trim(), bytes.as_slice());
-    }
-
-    #[test]
-    fn trim_left() {
-        let bytes = [
-            SPACE,
-            SPACE,
-            VERTICAL_TAB,
-            FORM_FEED,
-            HORIZONTAL_TAB,
-            CARRIAGE_RETURN,
-            LINE_FEED,
-            b'a',
-            b'b',
-            b'c',
-        ];
-        assert_eq!(bytes.trim(), b"abc");
-    }
-
-    #[test]
-    fn trim_right() {
-        let bytes = [
-            b'a',
-            b'b',
-            b'c',
-            SPACE,
-            SPACE,
-            VERTICAL_TAB,
-            FORM_FEED,
-            HORIZONTAL_TAB,
-            CARRIAGE_RETURN,
-            LINE_FEED,
-        ];
-        assert_eq!(bytes.trim(), b"abc");
-    }
-
-    #[test]
-    fn trim_both_side() {
-        let bytes = [
-            SPACE,
-            SPACE,
-            VERTICAL_TAB,
-            FORM_FEED,
-            HORIZONTAL_TAB,
-            CARRIAGE_RETURN,
-            LINE_FEED,
-            b'a',
-            b'b',
-            b'c',
-            SPACE,
-            SPACE,
-            VERTICAL_TAB,
-            FORM_FEED,
-            HORIZONTAL_TAB,
-            CARRIAGE_RETURN,
-            LINE_FEED,
-        ];
-        assert_eq!(bytes.trim(), b"abc");
     }
 }

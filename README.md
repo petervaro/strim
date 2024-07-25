@@ -19,7 +19,7 @@ assert_eq!(string, "Hello,World!");
 ```
 
 However when one is _forced_ to work with raw-literals, the `\` character cannot
-be employed anymore to un-break and unindent (i.e. _trim_) the lines.  This is
+be employed anymore to un-break and un-indent (i.e. _trim_) the lines.  This is
 the main use-case where the `strim::trim` macro shines.
 
 ```rust
@@ -34,15 +34,17 @@ assert_eq!(string, "\"Hello,World!\"");
 
 ## Installation
 
+Add the following to your `Cargo.toml`:
+
 ```toml
 [dependencies]
-strim = "~0.2.0"
+strim = "~0.3.0"
 ```
 
 Or use:
 
 ```bash
-$ cargo add strim@~0.2.0
+$ cargo add strim@~0.3.0
 ```
 
 ## Bug Reports and Feature Requests
@@ -54,10 +56,10 @@ or if you would like to submit a feature request, please do both of these in the
 ## Development and Contribution
 
 The simplest and quickest way to see the result of your changes is to use the
-`tests` project included in this repository, i.e.
+`dummy` project included in this repository, i.e.
 
 ```bash
-$ cd tests/
+$ cd dummy/
 $ cargo test
 ```
 
@@ -67,7 +69,7 @@ which are incorrect.  The tests which result in such compile errors are all
 hidden under the `compile-errors` feature.
 
 ```bash
-$ cd tests/
+$ cd dummy/
 $ cargo test --features compile-errors
 ```
 

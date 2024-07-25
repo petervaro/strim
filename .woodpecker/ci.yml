@@ -1,0 +1,9 @@
+when:
+    - event: push
+
+steps:
+    - name: ci
+      image: rust:1.80.0-slim-bookworm@sha256:37e6f90f98b3afd15c2526d7abb257a1f4cb7d49808fe3729d9d62020b07b544
+      commands:
+        - cargo test
+        - cd dummy && cargo test

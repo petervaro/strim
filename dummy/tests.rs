@@ -56,7 +56,7 @@ fn valid_byte_string() {
 iam, quis nostrud exercitation ullamco la
 
 boris nisi ut aliquip ex ea commodo consequat\r\n. Duis a\t\t\t
-ute irure dolor in reprehenderit in voluptate velit es\x0C\x0B
+ute irure dolor in reprehenderit in voluptate velit es\x0C
 se cillum dolore eu fugiat nulla pariatur.
 
         "),

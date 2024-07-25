@@ -74,7 +74,7 @@ where
 {
     let mut collected = Vec::new();
     for line in literal.value().lines() {
-        let trimmed = line.trim();
+        let trimmed = line.trim_ascii();
         if !trimmed.is_empty() {
             collected.extend_from_slice(trimmed);
         }
@@ -86,16 +86,14 @@ where
 /// [`trim!`] can be used on any string or byte-string literals to remove all
 /// blank lines and trim each line's leading and trailing whitespace.
 ///
-/// When `trim` processes a string literal, under the hood it  uses [str::trim],
-/// i.e. whatever that method considers as whitespace will be trimmed by this
-/// macro.
+/// When `trim` processes a string literal or a byte-string, under the hood it
+/// uses [`str::trim`] or [`<[u8]>::trim_ascii`][ta] respectively.
 ///
 /// When `trim` processes a byte-string literal, it considers either newline
 /// characters (`\n`) or sequences of carriage return followed by a line feed
 /// (`\r\n`) as line boundaries.  (This also means that carriage return (`\r`)
 /// not immediately followed by a line feed (`\n`) is not considered a line
-/// break.)  `trim` considers space (` `), horizontal tab (`\t`), vertical
-/// tab (`\v`), and form feed (`\f`) characters as whitespace.
+/// break.)
 ///
 /// In both string and byte-string literals, Whether a line is blank is
 /// considered after it has been trimmed, that is, if a line contains whitespace
@@ -117,6 +115,8 @@ where
 /// "#);
 /// assert_eq!(actual, expected);
 /// ```
+///
+/// [ta]: https://doc.rust-lang.org/std/primitive.slice.html#method.trim_ascii
 #[proc_macro]
 pub fn trim(stream: TokenStream) -> TokenStream {
     let span = Span::call_site();
