@@ -1,0 +1,8 @@
+when:
+    - event: push
+
+steps:
+    - name: test
+      image: rust:1.79.0-slim-bookworm@sha256:073c8e7ae12d2637d1d541cb0f3f9d92bfa22c97e2e45db87a9fc6a90c9a7f22
+      commands:
+        - ./scripts/test.sh ci

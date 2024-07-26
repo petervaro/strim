@@ -38,13 +38,13 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-strim = "~0.3.0"
+strim = "~0.4.0"
 ```
 
 Or use:
 
 ```bash
-$ cargo add strim@~0.3.0
+$ cargo add strim@~0.4.0
 ```
 
 ## Bug Reports and Feature Requests
@@ -71,6 +71,22 @@ hidden under the `compile-errors` feature.
 ```bash
 $ cd dummy/
 $ cargo test --features compile-errors
+```
+
+### Various Rust Versions
+
+The project uses `<[u8]>::trim_ascii` for byte-string trimming, however, that
+method has only been implemented since 1.80.0.  Therefore it also implements the
+same functionality conditionally.  For this reason, it should be tested with
+that version and the one before it.
+
+> **Note:** Eventually this complexity will be removed in later versions, when
+> `strim` is more or less considered complete, so that the last version of it
+> which still provides the alternative implementation would have most (if not
+> all) of the features later versions have.
+
+```bash
+$ ./scripts/test.sh local
 ```
 
 ## License

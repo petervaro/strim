@@ -62,11 +62,44 @@ impl<'a> Iterator for Lines<'a> {
 
 pub trait Bytes {
     fn lines(&self) -> impl Iterator<Item = &[u8]>;
+
+    fn trim(&self) -> &[u8];
 }
 
 impl Bytes for [u8] {
     fn lines(&self) -> impl Iterator<Item = &[u8]> {
         Lines::new(self)
+    }
+
+    #[rustversion::since(1.80.0)]
+    fn trim(&self) -> &[u8] {
+        self.trim_ascii()
+    }
+
+    #[rustversion::before(1.80.0)]
+    fn trim(&self) -> &[u8] {
+        let trimmed = {
+            let mut start = 0;
+            for byte in self {
+                if !byte.is_ascii_whitespace() {
+                    break;
+                }
+                start += 1;
+            }
+
+            &self[start..]
+        };
+
+        let mut end = trimmed.len();
+        for byte in trimmed.iter().rev() {
+            if !byte.is_ascii_whitespace() {
+                break;
+            }
+
+            end -= 1;
+        }
+
+        &trimmed[..end]
     }
 }
 

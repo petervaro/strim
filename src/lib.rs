@@ -74,7 +74,7 @@ where
 {
     let mut collected = Vec::new();
     for line in literal.value().lines() {
-        let trimmed = line.trim_ascii();
+        let trimmed = line.trim();
         if !trimmed.is_empty() {
             collected.extend_from_slice(trimmed);
         }
