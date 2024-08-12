@@ -1,86 +1,52 @@
 #![doc = include_str!("../README.md")]
 
 mod bytes;
+mod string;
+mod byte_string;
+mod join_with;
+mod arguments;
 
-use proc_macro::{
-    self,
-    TokenStream,
-    TokenTree,
-    Ident,
-    Punct,
-    Spacing,
-    Group,
-    Delimiter,
-    Span,
-};
-use litrs::{
-    self,
-    StringLit,
-    ByteStringLit,
-    Buffer,
-};
-use self::bytes::Bytes as _;
+use std::mem;
+use syn::parse_macro_input;
+use proc_macro::{TokenStream, TokenTree, Literal};
+use self::arguments::Arguments;
 
-trait ToCompileError {
-    fn to_compile_error<S>(self, message: S) -> TokenStream
-    where
-        S: AsRef<str>;
-}
+fn trimmed_string_joined_with_delimiter(
+    string: &str,
+    delimiter: &str,
+) -> String {
+    let mut collected = String::with_capacity(string.len());
+    let mut lines = string::Lines::from(string);
 
-impl ToCompileError for Span {
-    fn to_compile_error<S>(self, message: S) -> TokenStream
-        where
-            S: AsRef<str>,
-    {
-        let token_trees = [
-            TokenTree::from(Ident::new("compile_error", self)),
-            TokenTree::from(Punct::new('!', Spacing::Alone)),
-            TokenTree::from(Group::new(
-                Delimiter::Parenthesis,
-                {
-                    let literal = proc_macro::Literal::string(message.as_ref());
-                    TokenTree::from(literal).into()
-                },
-            ))
-        ];
+    if let Some(line) = lines.next() {
+        collected.push_str(line);
 
-        TokenStream::from_iter(
-            token_trees.into_iter().map(|mut token| {
-                token.set_span(self);
-                token
-            })
-        )
-    }
-}
-
-fn trimmed_string_literal<B>(literal: StringLit<B>) -> TokenTree
-where
-    B: Buffer,
-{
-    let mut collected = String::new();
-    for line in literal.value().lines() {
-        let trimmed = line.trim();
-        if !trimmed.is_empty() {
-            collected.push_str(trimmed);
+        for line in lines {
+            collected.push_str(delimiter);
+            collected.push_str(line);
         }
     }
 
-    TokenTree::from(proc_macro::Literal::string(&collected))
+    collected
 }
 
-fn trimmed_byte_string_literal<B>(literal: ByteStringLit<B>) -> TokenTree
-where
-    B: Buffer,
-{
-    let mut collected = Vec::new();
-    for line in literal.value().lines() {
-        let trimmed = line.trim();
-        if !trimmed.is_empty() {
-            collected.extend_from_slice(trimmed);
+fn trimmed_byte_string_joined_with_delimiter(
+    byte_string: &[u8],
+    delimiter: &[u8],
+) -> Vec<u8> {
+    let mut collected = Vec::with_capacity(byte_string.len());
+    let mut lines = byte_string::Lines::from(byte_string);
+
+    if let Some(line) = lines.next() {
+        collected.extend(line);
+
+        for line in lines {
+            collected.extend(delimiter);
+            collected.extend(line);
         }
     }
 
-    TokenTree::from(proc_macro::Literal::byte_string(&collected))
+    collected
 }
 
 /// [`trim!`] can be used on any string or byte-string literals to remove all
@@ -95,7 +61,7 @@ where
 /// not immediately followed by a line feed (`\n`) is not considered a line
 /// break.)
 ///
-/// In both string and byte-string literals, Whether a line is blank is
+/// In both string and byte-string literals, whether a line is blank is
 /// considered after it has been trimmed, that is, if a line contains whitespace
 /// only, it will removed.
 ///
@@ -116,60 +82,79 @@ where
 /// assert_eq!(actual, expected);
 /// ```
 ///
+/// The `trim` macro also accepts a named parameter called `join_with` which can
+/// be used to specify the _delimiter_ with which the lines are joined together.
+/// If the input is a string literal, the delimiter is expected to be either a
+/// character literal or a string literal.  If the input is a byte-string
+/// literal, the delimiter is expected to be either a byte literal or a
+/// byte-string literal.
+///
+/// # Example
+///
+/// ```
+/// # use strim::trim;
+/// let expected = "Alpha<br/>Beta and Gamma<br/>Delta, Epsilon, and Zeta";
+/// let actual = trim!(
+///     "Alpha
+///      Beta and Gamma
+///      Delta, Epsilon, and Zeta",
+///     join_with = "<br/>",
+/// );
+/// assert_eq!(actual, expected);
+/// ```
+///
 /// [ta]: https://doc.rust-lang.org/std/primitive.slice.html#method.trim_ascii
 #[proc_macro]
 pub fn trim(stream: TokenStream) -> TokenStream {
-    let span = Span::call_site();
-    let mut stream = stream.into_iter();
-    let Some(literal) = stream.next() else {
-        return span.to_compile_error(
-            "`trim` expects a single string or byte-string literal, \
-             but got none",
-        );
-    };
+    let arguments = parse_macro_input!(stream as Arguments);
 
-    if let Some(redundant) = stream.next() {
-        return redundant.span().to_compile_error(format!(
-            "`trim` expects a single string or byte-string literal, \
-             but got another argument: `{redundant}`",
-        ));
-    }
+    let token_tree = match arguments {
+        Arguments::String {
+            input,
+            delimiter: string::Delimiter::Character(delimiter),
+        } => {
+            let mut buffer = [0; mem::size_of::<char>()];
+            let delimiter = delimiter.encode_utf8(&mut buffer);
+            let string = trimmed_string_joined_with_delimiter(
+                &input,
+                delimiter,
+            );
 
-    let span = literal.span().clone();
-    // HACK: Unfortunately this is really, really quirky here -- there is no way
-    //       to get the source as a string-slice, which is unfortunately needed
-    //       by `litrs::Literal::parse` (which requires either `String` or
-    //       `&str`), so we rely on `TokenTree`'s `Display` implementation which
-    //       gives us `ToString::to_string`.  Even `Span::source_text` is
-    //       admittedly just a "best effort" based on the documentation so we
-    //       cannot use that either.  Hopefully either `litrs` will evolve or
-    //       the horrific `proc_macro` interface will.  Regardless whicever
-    //       happens first, we will be able to do something more reliable here
-    // SEE: https://doc.rust-lang.org/proc_macro/enum.TokenTree.html#impl-Display-for-TokenTree
-    // SEE: https://doc.rust-lang.org/proc_macro/struct.Span.html#method.source_text
-    let literal = literal.to_string();
+            TokenTree::from(Literal::string(&string))
+        },
+        Arguments::String {
+            input,
+            delimiter: string::Delimiter::String(delimiter),
+        } => {
+            let string = trimmed_string_joined_with_delimiter(
+                &input,
+                &delimiter,
+            );
 
-    let literal = match litrs::Literal::parse(literal.as_str()) {
-        Ok(literal) => literal,
-        // NOTE: For the time being we do not use `error.span()` because that is
-        //       returned as a `Range` instead of `proc_macro::Span` and the
-        //       latter cannot be constructed from the former.  When `litrs`
-        //       improves its ergonomics, we should be able to provide better
-        //       error location.  (That being said, I don't quite see how we
-        //       would hit this error, considering that `literal` is turned into
-        //       string from an already parsed `TokenTree`)
-        Err(error) => return span.to_compile_error(format!(
-            "`trim` cannot parse literal: {error}"
-        ))
-    };
+            TokenTree::from(Literal::string(&string))
+        },
+        Arguments::ByteString {
+            input,
+            delimiter: byte_string::Delimiter::Byte(delimiter),
+        } => {
+            let byte_string = trimmed_byte_string_joined_with_delimiter(
+                &input,
+                &[delimiter],
+            );
 
-    let token_tree = match literal {
-        litrs::Literal::String(string) => trimmed_string_literal(string),
-        litrs::Literal::ByteString(bytes) => trimmed_byte_string_literal(bytes),
-        _ => return span.to_compile_error(format!(
-            "`trim` expects a single string or byte-string literal, \
-             but got: {literal}",
-        ))
+            TokenTree::from(Literal::byte_string(&byte_string))
+        },
+        Arguments::ByteString {
+            input,
+            delimiter: byte_string::Delimiter::ByteString(delimiter),
+        } => {
+            let byte_string = trimmed_byte_string_joined_with_delimiter(
+                &input,
+                &delimiter,
+            );
+
+            TokenTree::from(Literal::byte_string(&byte_string))
+        },
     };
 
     token_tree.into()

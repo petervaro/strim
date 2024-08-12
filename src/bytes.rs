@@ -4,7 +4,7 @@ const NULL: u8 = b'\0';
 const LINE_FEED: u8 = b'\n';
 const CARRIAGE_RETURN: u8 = b'\r';
 
-struct Lines<'a> {
+pub struct Lines<'a> {
     slice: &'a [u8],
     bytes: Enumerate<Iter<'a, u8>>,
     index: usize,
@@ -61,13 +61,13 @@ impl<'a> Iterator for Lines<'a> {
 }
 
 pub trait Bytes {
-    fn lines(&self) -> impl Iterator<Item = &[u8]>;
+    fn lines(&self) -> Lines;
 
     fn trim(&self) -> &[u8];
 }
 
 impl Bytes for [u8] {
-    fn lines(&self) -> impl Iterator<Item = &[u8]> {
+    fn lines(&self) -> Lines {
         Lines::new(self)
     }
 

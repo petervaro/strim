@@ -32,19 +32,24 @@ let string = trim!(r#"
 assert_eq!(string, "\"Hello,World!\"");
 ```
 
+## Documentation
+
+For more detailed explanation how it can be used, please consult the
+documentation: https://docs.rs/strim/latest/strim.
+
 ## Installation
 
 Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-strim = "~0.4.0"
+strim = "~0.5.0"
 ```
 
 Or use:
 
 ```bash
-$ cargo add strim@~0.4.0
+$ cargo add strim@~0.5.0
 ```
 
 ## Bug Reports and Feature Requests
