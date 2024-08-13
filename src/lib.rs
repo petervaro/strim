@@ -2,11 +2,12 @@
 
 mod bytes;
 mod string;
+mod c_string;
 mod byte_string;
 mod join_with;
 mod arguments;
 
-use std::mem;
+use std::{mem, ffi::CStr};
 use syn::parse_macro_input;
 use proc_macro::{TokenStream, TokenTree, Literal};
 use self::arguments::Arguments;
@@ -49,21 +50,42 @@ fn trimmed_byte_string_joined_with_delimiter(
     collected
 }
 
-/// [`trim!`] can be used on any string or byte-string literals to remove all
-/// blank lines and trim each line's leading and trailing whitespace.
+fn trimmed_c_string_joined_with_delimiter(
+    c_string: &[u8],
+    delimiter: &[u8],
+) -> Vec<u8> {
+    let mut collected = Vec::with_capacity(c_string.len());
+    let mut lines = c_string::Lines::from(c_string);
+
+    if let Some(line) = lines.next() {
+        collected.extend(line);
+
+        for line in lines {
+            collected.extend(delimiter);
+            collected.extend(line);
+        }
+    }
+
+    collected.push(b'\0');
+
+    collected
+}
+
+/// [`trim!`] can be used on any string, byte-string, and C-string literals to
+/// remove all blank lines and trim each line's leading and trailing whitespace.
 ///
-/// When `trim` processes a string literal or a byte-string, under the hood it
-/// uses [`str::trim`] or [`<[u8]>::trim_ascii`][ta] respectively.
+/// To remove whitespace, under the hood `trim` uses [`str::trim`] for strings,
+/// and [`<[u8]>::trim_ascii`][ta] for both byte-strings and C-strings.
 ///
-/// When `trim` processes a byte-string literal, it considers either newline
-/// characters (`\n`) or sequences of carriage return followed by a line feed
-/// (`\r\n`) as line boundaries.  (This also means that carriage return (`\r`)
-/// not immediately followed by a line feed (`\n`) is not considered a line
-/// break.)
+/// When `trim` processes a byte-string or a C-string literal, it considers
+/// either newline characters (`\n`) or sequences of carriage return followed by
+/// a line feed (`\r\n`) as line boundaries.  (This also means that carriage
+/// return (`\r`) not immediately followed by a line feed (`\n`) is not
+/// considered a line break.)
 ///
-/// In both string and byte-string literals, whether a line is blank is
-/// considered after it has been trimmed, that is, if a line contains whitespace
-/// only, it will removed.
+/// In all scenarios, whether a line is blank is considered after it has been
+/// trimmed, that is, if a line contains whitespace only, then it will be
+/// considered as blank and therefore ignored.
 ///
 /// # Example
 ///
@@ -85,9 +107,19 @@ fn trimmed_byte_string_joined_with_delimiter(
 /// The `trim` macro also accepts a named parameter called `join_with` which can
 /// be used to specify the _delimiter_ with which the lines are joined together.
 /// If the input is a string literal, the delimiter is expected to be either a
-/// character literal or a string literal.  If the input is a byte-string
-/// literal, the delimiter is expected to be either a byte literal or a
-/// byte-string literal.
+/// character or a string literal.  If the input is a byte-string or a C-string
+/// literal, the delimiter is expected to be either a byte literal for both, or
+/// a byte-string literal for the former and a C-string literal for the latter.
+///
+/// For C-strings, if the delimiter is a byte literal, that cannot be the
+/// nul-terminator.  `trim` produces a compile-time error if it is.  In case the
+/// delimiter is a C-string, its nul-terminator will be omitted when joining the
+/// trimmed lines together, i.e. the resulting C-string literal will have one
+/// nul-terminator at the end.
+///
+/// > **N.B.** Only non-blank lines are joined together, i.e. the delimiter will
+/// > only be inserted between two non-blank lines.  What is considered as blank
+/// > line is explained above.
 ///
 /// # Example
 ///
@@ -154,6 +186,34 @@ pub fn trim(stream: TokenStream) -> TokenStream {
             );
 
             TokenTree::from(Literal::byte_string(&byte_string))
+        },
+        Arguments::CString {
+            input,
+            delimiter: c_string::Delimiter::Byte(delimiter),
+        } => {
+            let bytes = trimmed_c_string_joined_with_delimiter(
+                input.to_bytes(),
+                &[delimiter],
+            );
+            let c_string =
+                CStr::from_bytes_with_nul(&bytes)
+                    .expect("Invalid bytes for a C-string");
+
+            TokenTree::from(Literal::c_string(c_string))
+        },
+        Arguments::CString {
+            input,
+            delimiter: c_string::Delimiter::CString(delimiter),
+        } => {
+            let bytes = trimmed_c_string_joined_with_delimiter(
+                input.to_bytes(),
+                delimiter.to_bytes(),
+            );
+            let c_string =
+                CStr::from_bytes_with_nul(&bytes)
+                    .expect("Invalid bytes for a C-string");
+
+            TokenTree::from(Literal::c_string(c_string))
         },
     };
 

@@ -1,6 +1,6 @@
 [package]
 name = "strim"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 authors = ["Peter Varo <hello@petervaro.com>"]
 license = "GPL-3.0-or-later"
@@ -21,4 +21,4 @@ proc-macro = true
 
 [dependencies]
 rustversion = "~1.0.17"
-syn = "~2.0.72"
+syn = "~2.0.74"

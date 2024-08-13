@@ -3,12 +3,14 @@
 [![status-badge](https://ci.codeberg.org/api/badges/13539/status.svg)][badge]
 
 This crate provides a single procedural macro that removes all blank lines and
-leading and trailing whitespace from a string or byte-string literal.
+leading and trailing whitespace from a string, byte-string, and C-string
+literals.
 
 ## Rationale
 
-Rust's string (and byte-string) literals are very convenient to use when it
-comes to breaking them into multiple lines by utilising the `\` character, e.g.
+Rust's string (byte-string, and C-string) literals are very convenient to use
+when it comes to breaking them into multiple lines by utilising the `\`
+character, e.g.
 
 ```rust
 let string = "\
@@ -34,8 +36,8 @@ assert_eq!(string, "\"Hello,World!\"");
 
 ## Documentation
 
-For more detailed explanation how it can be used, please consult the
-documentation: https://docs.rs/strim/latest/strim.
+For more detailed explanation how the `trim` macro can be used, please consult
+its documentation: https://docs.rs/strim/0.6.0/strim/macro.trim.html.
 
 ## Installation
 
@@ -43,13 +45,13 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-strim = "~0.5.0"
+strim = "~0.6.0"
 ```
 
 Or use:
 
 ```bash
-$ cargo add strim@~0.5.0
+$ cargo add strim@~0.6.0
 ```
 
 ## Bug Reports and Feature Requests

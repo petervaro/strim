@@ -1,8 +1,10 @@
+use std::ffi::CString;
 use syn::{
     Error,
     Lit::{
         self,
         Str,
+        CStr,
         ByteStr,
     },
     parse::{
@@ -13,15 +15,19 @@ use syn::{
 use super::{
     join_with::JoinWith,
     string,
+    c_string,
     byte_string,
 };
 
 
-#[derive(Debug)]
 pub enum Arguments {
     String {
         input: String,
         delimiter: string::Delimiter,
+    },
+    CString {
+        input: CString,
+        delimiter: c_string::Delimiter
     },
     ByteString {
         input: Vec<u8>,
@@ -34,7 +40,7 @@ impl Parse for Arguments {
         const MESSAGE: &str =
             "Expected either a string or a byte-string literal";
 
-        match stream.parse::<Lit>() {
+        match Lit::parse(stream) {
             Ok(Str(literal)) => {
                 let join_with =
                     JoinWith::<string::Delimiter>::parse(stream)?;
@@ -42,6 +48,14 @@ impl Parse for Arguments {
                 let input = literal.value();
 
                 Ok(Self::String { input, delimiter })
+            },
+            Ok(CStr(literal)) => {
+                let join_with =
+                    JoinWith::<c_string::Delimiter>::parse(stream)?;
+                let delimiter = join_with.unwrap_delimiter();
+                let input = literal.value();
+
+                Ok(Self::CString { input, delimiter })
             },
             Ok(ByteStr(literal)) => {
                 let join_with =

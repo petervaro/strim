@@ -12,7 +12,6 @@ use syn::{
     },
 };
 
-#[derive(Debug)]
 pub enum Delimiter {
     Character(char),
     String(String),
